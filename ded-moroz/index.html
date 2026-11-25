@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Чудеса до 31-го — Дед Мороз</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0F1B3D; --red:#D7261E; --snow:#F4F6FA; --line:#C9D3E6;
+    --glass:rgba(15,27,61,.55);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--navy);overflow:hidden}
+  body{font-family:'Manrope',system-ui,sans-serif;color:var(--snow)}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+  /* the design is a 1920×1080 frame: scale it to the window */
+  .viewport{position:fixed;inset:0;overflow:hidden}
+  .stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;transform:translate(-50%,-50%) scale(var(--s,1))}
+
+  /* background: night scene + one layer per card (crossfade on hover) */
+  .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .7s ease}
+  .bg.is-on{opacity:1}
+  .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,27,61,.9) 0%,rgba(15,27,61,.45) 45%,rgba(15,27,61,0) 75%);pointer-events:none}
+  #sky{position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none;transition:opacity .6s ease}
+  .stage.is-hover #sky{opacity:0}
+
+  /* glass pill button (меню айтем) */
+  .pill{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:59px;padding:12px 24px;border-radius:40px;
+        font-weight:600;font-size:16px;line-height:normal;color:#fff;white-space:nowrap;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 0 rgba(255,255,255,.06);
+        transition:transform .2s ease, filter .2s ease}
+  .pill:hover{transform:translateY(-1px);filter:brightness(1.08)}
+  .pill img{width:24px;height:24px;display:block}
+  .pill--red{background:var(--red);backdrop-filter:blur(2px)}
+  .pill--glass{background:var(--glass);backdrop-filter:blur(16px)}
+
+  /* top bar */
+  .nav{position:absolute;left:802px;top:69px;height:68px;display:flex;align-items:center;gap:8px;padding:8px;border-radius:50px;
+       background:rgba(0,0,0,.1);border:1px solid var(--line);backdrop-filter:blur(2px);
+       box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+  .nav a{display:flex;align-items:center;justify-content:center;padding:12px 24px;border-radius:40px;background:rgba(0,0,0,.13);
+         border:1px solid rgba(201,211,230,.1);font-weight:600;font-size:16px;line-height:normal;color:var(--snow);text-decoration:none;white-space:nowrap;
+         box-shadow:inset 0 1px 0 rgba(255,255,255,.14);transition:background .2s}
+  .nav a:hover{background:rgba(255,255,255,.08)}
+  .hours{position:absolute;left:1398px;top:89px;display:flex;align-items:center;gap:12px;font-weight:500;font-size:20px;line-height:1.4;white-space:nowrap}
+  .hours .ic{position:relative;width:22px;height:22px;opacity:.29;overflow:hidden}
+  .hours .ic img{position:absolute;inset:8.33%;width:83.34%;height:83.34%;display:block}
+
+  /* hero */
+  .hero{position:absolute;left:50%;top:212px;width:1220px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:42px;text-align:center}
+  .hero__text{display:flex;flex-direction:column;align-items:center;gap:32px;width:100%}
+  .hero h1{font-family:'Unbounded',sans-serif;font-weight:900;font-size:120px;line-height:1.05;text-transform:uppercase;color:var(--snow)}
+  .hero h1 span{display:block}
+  .hero h1 .red{color:var(--red)}
+  .hero p{width:688px;font-size:24px;line-height:1.4;font-weight:400}
+
+  /* cards */
+  .cards{position:absolute;left:50%;top:739px;transform:translateX(-50%);display:flex;align-items:center;gap:16px}
+  .card{width:268px;display:flex;flex-direction:column;gap:20px;padding:16px;border-radius:18px;text-align:left;
+        background:var(--glass);border:1px solid rgba(244,246,250,.15);
+        transform-origin:center;will-change:transform;
+        transition:transform .35s ease, background .35s ease, border-color .35s ease, backdrop-filter .35s ease;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  .card__img{width:100%;aspect-ratio:352/200;border-radius:12px;object-fit:cover;display:block}
+  .card__txt{display:flex;flex-direction:column;gap:6px;line-height:1.4}
+  .card__title{font-weight:700;font-size:18px;color:var(--snow);white-space:nowrap}
+  .card__desc{font-weight:400;font-size:16px;color:var(--line)}
+  /* hover state = the middle card in the mockup */
+  /* scale instead of resizing: the text stays put and the other cards don't move */
+  .card:hover,.card:focus-visible{transform:scale(1.082);background:rgba(15,27,61,.07);border-color:var(--snow);backdrop-filter:blur(14px);outline:none;position:relative;z-index:2}
+
+  .all{position:absolute;left:1412px;top:952px}
+</style>
+</head>
+<body>
+<div class="viewport">
+  <div class="stage" id="stage">
+    <img class="bg is-on" data-bg="0" src="assets/bg.jpg" alt="">
+    <img class="bg" data-bg="1" src="assets/card_pismo.jpg" alt="">
+    <img class="bg" data-bg="2" src="assets/card_podarok.jpg" alt="">
+    <img class="bg" data-bg="3" src="assets/card_zvonok.jpg" alt="">
+    <div class="shade"></div>
+    <canvas id="sky" width="1920" height="1080"></canvas>
+
+    <nav class="nav">
+      <a href="#">Подарки</a><a href="#">Олени</a><a href="#">О нас</a>
+    </nav>
+    <div class="hours"><span class="ic"><img src="assets/icon-clock.svg" alt=""></span>Работаем без выходных до боя курантов.</div>
+
+    <section class="hero">
+      <div class="hero__text">
+        <h1><span class="red">Чудеса</span><span>до 31-го</span></h1>
+        <p>Пишите письмо до 31&nbsp;декабря: эльфы соберут подарок, а&nbsp;олени привезут его прямо под&nbsp;ёлку.</p>
+      </div>
+      <button class="pill pill--red">Написать письмо <img src="assets/icon-arrow.svg" alt=""></button>
+    </section>
+
+    <div class="cards">
+      <button class="card" data-bg="1">
+        <img class="card__img" src="assets/card_pismo.jpg" alt="Письмо с сургучной печатью у окна">
+        <span class="card__txt"><span class="card__title">Письмо Деду Морозу</span><span class="card__desc">Ответ от руки и снежинка в&nbsp;конверте</span></span>
+      </button>
+      <button class="card" data-bg="2">
+        <img class="card__img" src="assets/card_podarok.jpg" alt="Подарки под ёлкой">
+        <span class="card__txt"><span class="card__title">Подарок под ёлку</span><span class="card__desc">Эльфы соберут, олени привезут до&nbsp;31-го</span></span>
+      </button>
+      <button class="card" data-bg="3">
+        <img class="card__img" src="assets/card_zvonok.jpg" alt="Красный телефон у снежного окна">
+        <span class="card__txt"><span class="card__title">Звонок от Деда Мороза</span><span class="card__desc">Поздравит по имени и спросит про стишок</span></span>
+      </button>
+    </div>
+
+    <button class="pill pill--glass all">Все подарки <img src="assets/icon-arrow.svg" alt=""></button>
+  </div>
+</div>
+
+<script>
+/* ---------- scale the 1920×1080 frame to the window (cover) ---------- */
+const stage=document.getElementById('stage');
+function fit(){const s=Math.max(innerWidth/1920,innerHeight/1080);stage.style.setProperty('--s',s);fit.s=s;}
+fit(); addEventListener('resize',fit);
+
+/* ---------- background swaps on card hover ---------- */
+const bgs=[...document.querySelectorAll('.bg')];
+function showBg(i){bgs.forEach(b=>b.classList.toggle('is-on',b.dataset.bg==i));stage.classList.toggle('is-hover',i!=0);}
+document.querySelectorAll('.card').forEach(c=>{
+  c.addEventListener('mouseenter',()=>showBg(c.dataset.bg));
+  c.addEventListener('focus',()=>showBg(c.dataset.bg));
+  c.addEventListener('mouseleave',()=>showBg(0));
+  c.addEventListener('blur',()=>showBg(0));
+});
+
+/* ---------- flying sleigh with star dust ---------- */
+const FRAMES=120, COLS=10, FW=400, FH=208;
+const KEYS=[[0,0],[90,42],[180,62],[225,90],[270,102],[360,120]];   // the turn in the video is not uniform
+const angToFrame=a=>{for(let i=0;i<KEYS.length-1;i++){const[a0,f0]=KEYS[i],[a1,f1]=KEYS[i+1];if(a<=a1)return f0+(f1-f0)*(a-a0)/(a1-a0);}return 0;};
+const shortest=(a,b)=>((b-a)%360+540)%360-180;
+const W=1920,H=1080, cv=document.getElementById('sky'), ctx=cv.getContext('2d');
+const sprite=new Image(); sprite.src='assets/sani_sprite_120.webp';
+
+function glow(size,stops){const c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d'),r=size/2,gr=g.createRadialGradient(r,r,0,r,r,r);stops.forEach(([p,col])=>gr.addColorStop(p,col));g.fillStyle=gr;g.fillRect(0,0,size,size);return c;}
+const DOT=glow(64,[[0,'rgba(255,255,255,1)'],[.18,'rgba(255,246,214,.95)'],[.45,'rgba(255,206,110,.45)'],[1,'rgba(255,170,60,0)']]);
+const HALO=glow(256,[[0,'rgba(255,228,160,.55)'],[.4,'rgba(255,200,120,.18)'],[1,'rgba(255,180,90,0)']]);
+const FLARE=(()=>{const size=128,c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d'),r=size/2;g.globalCompositeOperation='lighter';
+  g.drawImage(glow(size,[[0,'rgba(255,255,255,1)'],[.08,'rgba(255,248,220,.9)'],[.25,'rgba(255,214,130,.3)'],[1,'rgba(255,190,80,0)']]),0,0);
+  for(const[w,a]of[[0,1],[Math.PI/2,1],[Math.PI/4,.45],[-Math.PI/4,.45]]){g.save();g.translate(r,r);g.rotate(w);const L=a===1?r:r*.55,gr=g.createLinearGradient(-L,0,L,0);
+    gr.addColorStop(0,'rgba(255,220,140,0)');gr.addColorStop(.5,`rgba(255,255,255,${a})`);gr.addColorStop(1,'rgba(255,220,140,0)');g.fillStyle=gr;g.beginPath();g.moveTo(-L,0);g.quadraticCurveTo(0,-size*.018,L,0);g.quadraticCurveTo(0,size*.018,-L,0);g.fill();g.restore();}
+  return c;})();
+
+const s={x:W*.5,y:H*.4,vx:0,vy:0,ang:0,targetAng:0,scale:.6};
+const mouse={x:W*.5,y:H*.4,last:-1e9}; let autoT=0, autoBlend=1;
+addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();mouse.x=(e.clientX-r.left)/fit.s;mouse.y=(e.clientY-r.top)/fit.s;mouse.last=performance.now();});
+
+const dust=[];
+function emit(x,y,dx,dy,sc,sp){
+  if(dust.length>520)return;
+  const n=Math.round(5+Math.min(sp,6)*1.6);
+  for(let i=0;i<n;i++){const flare=Math.random()<.14,spread=(Math.random()-.5)*28*sc;
+    dust.push({flare,x:x+dx*Math.random()*30*sc-dy*spread,y:y+dy*Math.random()*30*sc+dx*spread*.6,
+      vx:dx*(.4+Math.random()*1.2)+(Math.random()-.5)*.6,vy:dy*(.4+Math.random()*1.2)+(Math.random()-.5)*.6,
+      life:1,decay:.008+Math.random()*.012,size:(flare?18+Math.random()*26:3+Math.random()*9)*Math.max(.55,sc),tw:Math.random()*6,rot:Math.random()*Math.PI});}
+}
+
+let t0=performance.now();
+function frame(now){
+  const dt=Math.min(50,now-t0)/16.67; t0=now;
+  // cursor, or autopilot (carousel orbit) when idle / on touch screens
+  const idle=now-mouse.last>2500;
+  autoBlend+=((idle?1:0)-autoBlend)*(1-Math.exp(-.02*dt));
+  if(idle) autoT+=dt/60;
+  const om=2*Math.PI/14, ax=W*.5+W*.34*Math.sin(om*autoT), ay=H*.44+H*.17*Math.cos(om*autoT);
+  const tx=mouse.x*(1-autoBlend)+ax*autoBlend, ty=mouse.y*(1-autoBlend)+ay*autoBlend;
+
+  const follow=1-Math.exp(-(.085+.12*autoBlend)*dt), px=s.x, py=s.y;
+  s.x+=(tx-s.x)*follow; s.y+=(ty-s.y)*follow;
+  const vs=1-Math.exp(-.25*dt); s.vx+=((s.x-px)/dt-s.vx)*vs; s.vy+=((s.y-py)/dt-s.vy)*vs;
+  const sp=Math.hypot(s.vx,s.vy);
+  if(sp>.25) s.targetAng=(Math.atan2(s.vy*.8,-s.vx)*180/Math.PI+360)%360;   // left 0°, toward us 90°, right 180°, away 270°
+  s.ang=(s.ang+shortest(s.ang,s.targetAng)*(1-Math.exp(-.09*dt))+360)%360;
+  s.scale+=((.34+.72*Math.max(0,Math.min(1,s.y/H)))-s.scale)*.05*dt;      // higher = farther = smaller
+
+  const gallop=Math.round(Math.sin(now/95)*1.5), bob=Math.sin(now/170)*5*s.scale;
+  const rad=s.ang*Math.PI/180, bx=Math.cos(rad), by=-Math.sin(rad)*.55;
+  emit(s.x+bx*95*s.scale, s.y+12*s.scale+by*55*s.scale+bob, bx, by, s.scale, sp);
+
+  ctx.clearRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  for(let i=dust.length-1;i>=0;i--){const p=dust[i];
+    p.vx*=Math.pow(.985,dt); p.vy=p.vy*Math.pow(.985,dt)+.012*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=p.decay*dt;
+    if(p.life<=0||p.y>H+40){dust[i]=dust[dust.length-1];dust.pop();continue;}
+    const tw=.55+.45*Math.sin(now/90+p.tw*7); ctx.globalAlpha=Math.min(1,p.life*1.6)*tw;
+    if(p.flare){const z=p.size*(.6+.4*tw),r=p.rot+now/2400,c=Math.cos(r),sn=Math.sin(r);ctx.setTransform(c,sn,-sn,c,p.x,p.y);ctx.drawImage(FLARE,-z/2,-z/2,z,z);ctx.setTransform(1,0,0,1,0,0);}
+    else{const z=p.size*(.5+.5*p.life);ctx.drawImage(DOT,p.x-z/2,p.y-z/2,z,z);}
+  }
+  ctx.globalAlpha=.75; const hz=460*s.scale; ctx.drawImage(HALO,s.x-hz/2,s.y-hz/2+bob,hz,hz);
+  ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+  if(sprite.complete&&sprite.naturalWidth){
+    const fi=((Math.round(angToFrame(s.ang))+gallop)%FRAMES+FRAMES)%FRAMES, w=FW*.94*s.scale, h=FH*.94*s.scale;
+    const tilt=Math.max(-.14,Math.min(.14,s.vy*.03));
+    ctx.save(); ctx.translate(s.x,s.y+bob); ctx.rotate(tilt);
+    ctx.drawImage(sprite,(fi%COLS)*FW,Math.floor(fi/COLS)*FH,FW,FH,-w/2,-h/2,w,h); ctx.restore();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

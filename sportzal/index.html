@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Беги к цели — спортзал</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@900&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0E0F12;--lime:#C6F432;--text:#F5F6F7;--muted:#A7ADB8;--glass:rgba(14,15,18,.55);
+        --blue:#3B82F6;--green:#22C55E;--red:#EF4444}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);overflow:hidden}
+  body{font-family:'Manrope',system-ui,sans-serif;color:var(--text)}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+  .viewport{position:fixed;inset:0;overflow:hidden}
+  .stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform:translate(-50%,-50%) scale(var(--s,1))}
+
+  /* background: still frame + one video per lever mode, crossfaded */
+  .layer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s ease;pointer-events:none}
+  .layer.is-on{opacity:1}
+
+  .pill{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:59px;padding:12px 24px;border-radius:40px;
+        font-weight:600;font-size:16px;line-height:normal;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.22);transition:transform .2s,filter .2s}
+  .pill:hover{transform:translateY(-1px);filter:brightness(1.06)}
+  .pill img{width:24px;height:24px;display:block}
+  .pill--lime{background:var(--lime);color:var(--bg)}
+  .pill--glass{background:var(--glass);color:#fff;backdrop-filter:blur(16px)}
+
+  .nav{position:absolute;left:802px;top:69px;height:68px;display:flex;align-items:center;gap:8px;padding:8px;border-radius:50px;
+       background:rgba(0,0,0,.1);border:1px solid var(--muted);backdrop-filter:blur(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+  .nav a{display:flex;align-items:center;padding:12px 24px;border-radius:40px;background:rgba(0,0,0,.13);border:1px solid rgba(167,173,184,.1);
+         font-weight:600;font-size:16px;line-height:normal;color:#F4F6FA;text-decoration:none;white-space:nowrap;transition:background .2s}
+  .nav a:hover{background:rgba(255,255,255,.08)}
+  .hours{position:absolute;right:120px;top:89px;display:flex;align-items:center;gap:12px;font-weight:500;font-size:20px;line-height:1.4;white-space:nowrap}
+  .hours .ic{position:relative;width:22px;height:22px;opacity:.29;overflow:hidden}
+  .hours .ic img{position:absolute;inset:8.33%;width:83.34%;height:83.34%;display:block}
+
+  .hero{position:absolute;left:120px;top:170px;width:760px;display:flex;flex-direction:column;align-items:flex-start;gap:42px}
+  .hero__text{display:flex;flex-direction:column;gap:32px}
+  .hero h1{font-family:'Unbounded',sans-serif;font-weight:900;font-size:120px;line-height:1.05;text-transform:uppercase}
+  .hero h1 span{display:block}
+  .hero h1 .lime{color:var(--lime)}
+  .hero p{width:600px;font-size:24px;line-height:1.4}
+
+  .cards{position:absolute;left:120px;top:717px;display:flex;align-items:center;gap:16px}
+  .card{width:268px;display:flex;flex-direction:column;gap:20px;padding:16px;border-radius:18px;text-align:left;
+        background:var(--glass);border:1px solid rgba(245,246,247,.15);transform-origin:center;
+        transition:transform .35s ease,background .35s ease,border-color .35s ease}
+  .card__img{width:100%;aspect-ratio:234/131;border-radius:12px;object-fit:cover;display:block}
+  .card__txt{display:flex;flex-direction:column;gap:6px;line-height:1.4}
+  .card__title{font-weight:700;font-size:18px;white-space:nowrap}
+  .card__desc{font-weight:500;font-size:16px;color:var(--muted)}
+  /* hover / active = the middle card in the mockup; scaling keeps the other cards in place */
+  .card:hover,.card:focus-visible,.card.is-active{transform:scale(1.082);background:rgba(198,244,50,.03);border-color:var(--lime);outline:none;position:relative;z-index:2}
+  .all{position:absolute;left:1002px;top:941px}
+
+  /* speed lever */
+  .lever{position:absolute;right:120px;top:542px;display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 18px;border-radius:28px;
+         background:var(--glass);border:1px solid rgba(245,246,247,.15);backdrop-filter:blur(12px);user-select:none}
+  .lever__label{font-weight:600;font-size:13px;letter-spacing:1.56px;color:var(--muted)}
+  .track{position:relative;width:64px;height:300px;border-radius:32px;cursor:pointer;touch-action:none;
+         background:linear-gradient(to top,var(--blue) 0%,var(--green) 50%,var(--red) 100%);
+         box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+  .knob{position:absolute;left:4px;width:56px;height:56px;border-radius:50%;background:var(--text);border:4px solid var(--bg);
+        box-shadow:0 6px 16px rgba(0,0,0,.45);transform:translateY(-50%);transition:top .35s cubic-bezier(.2,.8,.2,1),box-shadow .2s}
+  .knob.is-drag{transition:none;box-shadow:0 8px 22px rgba(0,0,0,.55),0 0 0 6px rgba(255,255,255,.15)}
+  .legend{display:flex;flex-direction:column;gap:8px;font-weight:600;font-size:13px;white-space:nowrap}
+  .legend span{opacity:.55;transition:opacity .3s}
+  .legend span.is-on{opacity:1}
+  .legend i{font-style:normal}
+  .hint{position:absolute;left:1442px;top:602px;font-weight:700;font-size:18px;color:var(--lime);white-space:nowrap;transition:opacity .4s;pointer-events:none;
+        animation:nudge 1.6s ease-in-out infinite}
+  .hint.is-hidden{opacity:0}
+  @keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+<div class="viewport">
+  <div class="stage" id="stage">
+    <img class="layer is-on" id="still" src="assets/bg.jpg" alt="">
+    <video class="layer" id="v-blue"  src="assets/blue.mp4"  muted playsinline preload="auto" loop></video>
+    <video class="layer" id="v-green" src="assets/green.mp4" muted playsinline preload="auto"></video>
+    <video class="layer" id="v-red"   src="assets/red.mp4"   muted playsinline preload="auto"></video>
+
+    <nav class="nav"><a href="#">Тренировки</a><a href="#">Тренеры</a><a href="#">Цены</a></nav>
+    <div class="hours"><span class="ic"><img src="assets/icon-clock.svg" alt=""></span>Открыто 24/7, без выходных и на обед не ходим</div>
+
+    <section class="hero">
+      <div class="hero__text">
+        <h1><span>Беги</span><span class="lime">к цели</span></h1>
+        <p>Двигай рычаг скорости и смотри, что будет. А&nbsp;потом приходи на&nbsp;пробную тренировку — первая бесплатно.</p>
+      </div>
+      <button class="pill pill--lime">Пробная тренировка <img src="assets/icon-arrow-dark.svg" alt=""></button>
+    </section>
+
+    <div class="cards">
+      <button class="card" data-mode="blue">
+        <img class="card__img" src="assets/card_walk.jpg" alt="Девушка спокойно идёт по дорожке">
+        <span class="card__txt"><span class="card__title">Лёгкий старт</span><span class="card__desc">Кардио в&nbsp;комфортном темпе, без перегрузок</span></span>
+      </button>
+      <button class="card" data-mode="green">
+        <img class="card__img" src="assets/card_run.jpg" alt="Девушка бодро бежит по дорожке">
+        <span class="card__txt"><span class="card__title">В ритме</span><span class="card__desc">Бодрый бег под музыку и&nbsp;интервалы с&nbsp;тренером</span></span>
+      </button>
+      <button class="card" data-mode="red">
+        <img class="card__img" src="assets/card_fly.jpg" alt="Девушка улетает с дорожки">
+        <span class="card__txt"><span class="card__title">Максимум</span><span class="card__desc">Для тех, кто готов улететь с&nbsp;дорожки</span></span>
+      </button>
+    </div>
+    <button class="pill pill--glass all">Все программы <img src="assets/icon-arrow.svg" alt=""></button>
+
+    <div class="hint" id="hint">Потяни рычаг ↑</div>
+    <div class="lever">
+      <div class="lever__label">СКОРОСТЬ</div>
+      <div class="track" id="track" role="slider" tabindex="0" aria-label="Скорость дорожки" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">
+        <div class="knob" id="knob"></div>
+      </div>
+      <div class="legend">
+        <span data-mode="blue"><i style="color:var(--blue)">●</i> синий — лёгкая ходьба</span>
+        <span data-mode="green"><i style="color:var(--green)">●</i> зелёный — бодрый бег</span>
+        <span data-mode="red"><i style="color:var(--red)">●</i> красный — улёт</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const stage=document.getElementById('stage');
+function fit(){const s=Math.max(innerWidth/1920,innerHeight/1080);stage.style.setProperty('--s',s);fit.s=s;}
+fit(); addEventListener('resize',fit);
+
+/* ---------- modes ---------- */
+const MODES=['off','blue','green','red'];
+// knob centre position on the 300px track for each mode (bottom = off, top = red)
+const POS={off:272,blue:200,green:128,red:52};
+const still=document.getElementById('still');
+const vids={blue:document.getElementById('v-blue'),green:document.getElementById('v-green'),red:document.getElementById('v-red')};
+const knob=document.getElementById('knob'), track=document.getElementById('track'), hint=document.getElementById('hint');
+let mode='off', resetTimer=null;
+
+function show(layer){[still,...Object.values(vids)].forEach(el=>el.classList.toggle('is-on',el===layer));}
+function setMode(m){
+  if(m===mode) return; mode=m; clearTimeout(resetTimer);
+  knob.style.top=POS[m]+'px';
+  track.setAttribute('aria-valuenow',MODES.indexOf(m));
+  document.querySelectorAll('.legend span').forEach(s=>s.classList.toggle('is-on',s.dataset.mode===m));
+  document.querySelectorAll('.card').forEach(c=>c.classList.toggle('is-active',c.dataset.mode===m));
+  if(m!=='off') hint.classList.add('is-hidden');
+  Object.entries(vids).forEach(([k,v])=>{if(k!==m){v.pause();}});
+  if(m==='off'){show(still);return;}
+  const v=vids[m]; v.currentTime=0; v.play().catch(()=>{}); show(v);
+}
+// green holds its last frame (video simply ends); red holds 2 s, then the lever drops back
+vids.red.addEventListener('ended',()=>{resetTimer=setTimeout(()=>setMode('off'),2000);});
+
+/* ---------- lever: drag or click the track ---------- */
+function modeAt(y){ // y in track px, 0 = top
+  if(y<90) return 'red'; if(y<164) return 'green'; if(y<236) return 'blue'; return 'off';
+}
+function trackY(e){const r=track.getBoundingClientRect();return Math.max(0,Math.min(300,(e.clientY-r.top)/fit.s));}
+let dragging=false;
+track.addEventListener('pointerdown',e=>{dragging=true;track.setPointerCapture(e.pointerId);knob.classList.add('is-drag');const y=trackY(e);knob.style.top=Math.max(28,Math.min(272,y))+'px';});
+track.addEventListener('pointermove',e=>{if(!dragging)return;const y=trackY(e);knob.style.top=Math.max(28,Math.min(272,y))+'px';});
+track.addEventListener('pointerup',e=>{if(!dragging)return;dragging=false;knob.classList.remove('is-drag');const m=modeAt(trackY(e));mode=null;setMode(m);});
+track.addEventListener('keydown',e=>{let i=MODES.indexOf(mode);
+  if(e.key==='ArrowUp'||e.key==='ArrowRight') i=Math.min(3,i+1); else if(e.key==='ArrowDown'||e.key==='ArrowLeft') i=Math.max(0,i-1); else return;
+  e.preventDefault(); setMode(MODES[i]);});
+
+/* ---------- cards pick a mode too ---------- */
+document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>setMode(mode===c.dataset.mode?'off':c.dataset.mode)));
+
+knob.style.top=POS.off+'px';
+</script>
+</body>
+</html>

@@ -71,9 +71,8 @@
   .legend span{opacity:.55;transition:opacity .3s}
   .legend span.is-on{opacity:1}
   .legend i{font-style:normal}
-  .hint{position:absolute;left:1442px;top:602px;font-weight:700;font-size:18px;color:var(--lime);white-space:nowrap;transition:opacity .4s;pointer-events:none;
+  .hint{position:absolute;right:338px;top:592px;font-weight:800;font-size:28px;color:var(--lime);white-space:nowrap;pointer-events:none;text-shadow:0 2px 12px rgba(0,0,0,.55);
         animation:nudge 1.6s ease-in-out infinite}
-  .hint.is-hidden{opacity:0}
   @keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 </style>
 </head>
@@ -148,7 +147,6 @@ function setMode(m){
   track.setAttribute('aria-valuenow',MODES.indexOf(m));
   document.querySelectorAll('.legend span').forEach(s=>s.classList.toggle('is-on',s.dataset.mode===m));
   document.querySelectorAll('.card').forEach(c=>c.classList.toggle('is-active',c.dataset.mode===m));
-  if(m!=='off') hint.classList.add('is-hidden');
   Object.entries(vids).forEach(([k,v])=>{if(k!==m){v.pause();}});
   if(m==='off'){show(still);return;}
   const v=vids[m]; v.currentTime=0; v.play().catch(()=>{}); show(v);

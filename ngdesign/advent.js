@@ -189,6 +189,8 @@
  .adv-card.opened:hover .fd,.adv-card.opened:hover .ff{transform:scale(1)}
  .adv-card.opened:hover .kt{transform:none}
 }
+.adv-card.closed{transition:transform .3s cubic-bezier(.22,1,.36,1)}
+@media (hover:hover){.adv-card.closed:hover{transform:translateY(-6px)}.adv-card.closed:hover .toy{animation:advWig 1.4s ease-in-out infinite;transform-origin:50% 90%}}
 .adv-card.shake{animation:advShake .5s cubic-bezier(.36,.07,.19,.97)}
 @keyframes advShake{10%,90%{transform:translateX(-1px) rotate(-.3deg)}20%,80%{transform:translateX(3px) rotate(.6deg)}
  30%,50%,70%{transform:translateX(-5px) rotate(-.9deg)}40%,60%{transform:translateX(5px) rotate(.9deg)}}
@@ -317,6 +319,17 @@
 .adv-dlg .tx.ph{min-height:388px}
 .adv-dlg .tx p{margin:0 0 12px}
 .adv-dlg .tx img,.adv-dlg .tx video{display:block;width:100%;height:auto;margin-top:16px}
+.adv-dlg .tx img.ex{width:min(360px,100%);margin:4px 0 16px;border-radius:8px}
+.adv-dlg .tx a{color:#d7261e}
+.adv-dlg .pv{margin:-28px 0 0}
+.adv-dlg .pv img,.adv-dlg .pv video{display:block;width:100%;height:auto;border-radius:12px}
+.adv-dlg .pv.site{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#0b1630}
+.adv-dlg .pv.site iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.adv-dlg .pv.site .poster{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:0}
+.adv-dlg .pv.site .open{position:absolute;right:12px;bottom:12px;height:44px;padding:10px 16px}
+@container adv (max-width:699px){}
+@media (max-width:699px){.adv-dlg .pv.site .open{right:8px;bottom:8px;height:36px;padding:6px 12px;font-size:14px}.adv-dlg .pv{margin:-8px 0 0}}
+@media (hover:none),(max-width:699px){.adv-dlg .pv.site iframe{display:none}.adv-dlg .pv.site .poster{display:block}}
 .adv-dlg .gt{display:flex;flex-direction:column;gap:16px;font-size:18px;line-height:1.16}
 .adv-dlg .bt{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .adv-dlg .bt .adv-btn{text-decoration:none}
@@ -362,6 +375,10 @@
   var q = window.ADVENT_DAYS = window.ADVENT_DAYS || [];
   q.forEach(addDay);
   q.push = function () { for (var i = 0; i < arguments.length; i++) addDay(arguments[i]); return Array.prototype.push.apply(this, arguments); };
+  var DAYDIR = BASE + 'days/';
+  function addContent(c) { if (!c) return; for (var k in c) { DAYS[+k] = Object.assign({}, DAYS[+k] || {}, c[k], { day: +k }); } if (ready) refresh(); }
+  if (window.ADVENT_CONTENT) addContent(window.ADVENT_CONTENT);
+  else { var ds = document.createElement('script'); ds.src = BASE + 'days.js?v=' + Date.now().toString(36).slice(0, -3); ds.onload = function () { addContent(window.ADVENT_CONTENT); }; document.head.appendChild(ds); }
 
   /* ---------- время (Москва) ---------- */
   function now() {
@@ -375,13 +392,11 @@
   function stateOf(d) {
     var data = DAYS[d] || {}, t = TEST ? data.test : '';
     if (t === 'opened') return 'opened';
-    var avail = t === 'open' || now() >= dayStart(d);
-    if (!avail) return 'closed';
-    return opened().indexOf(d) >= 0 ? 'opened' : 'open';
+    return opened().indexOf(d) >= 0 ? 'opened' : 'closed'; // все окошки доступны сразу: «тема» → после открытия «уже открыли»
   }
   function plural(n, a, b, c) { n = Math.abs(n) % 100; var n1 = n % 10; if (n > 10 && n < 20) return c; if (n1 > 1 && n1 < 5) return b; if (n1 === 1) return a; return c; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function nb(s) { return esc(s).replace(/(^|[\s(«])([а-яёА-ЯЁa-zA-Z]{1,2}) /g, '$1$2 ').replace(/ —/g, ' —'); }
+  function nb(s) { return esc(s).replace(/(\d+-[а-яёa-z]+)/gi, '<span style="white-space:nowrap">$1</span>').replace(/(^|[\s(«])([а-яёА-ЯЁa-zA-Z]{1,2}) /g, '$1$2 ').replace(/ —/g, ' —'); }
 
   /* ---------- разметка ---------- */
   function cardHTML(d) {
@@ -393,10 +408,8 @@
     var t = TOY[code];
     if (t) toy = '<img class="toy" alt="" loading="lazy" src="' + IMG + t[0] + '.webp" style="right:calc(' + t[1] + ' * var(--u));bottom:calc(' + t[2] + ' * var(--u));width:calc(' + t[3] + ' * var(--u));height:calc(' + t[4] + ' * var(--u))">';
     var lb, tt;
-    if (st === 'closed') { lb = 'скоро откроется'; tt = d + ' ' + MONTHS; }
-    else if (st === 'open') { lb = 'открыто'; tt = 'забирай подарок!'; pat = ''; toy = ''; }
-    else { lb = 'тема'; tt = data.topic || 'Тема дня'; }
-    var label = st === 'closed' ? d + ' декабря, скоро откроется' : (st === 'open' ? 'Окошко ' + d + ' открыто — забрать подарок' : 'Окошко ' + d + ': ' + (data.topic || 'тема дня'));
+    lb = 'тема'; tt = data.topic || 'Подарок ' + d;
+    var label = 'Окошко ' + d + ': ' + (data.topic || 'подарок');
     return '<button type="button" class="adv-card ' + col + ' ' + st + (d > 20 ? ' wide' : '') + '" data-day="' + d + '" id="adv-day-' + d + '" data-topic="' + esc(data.topic || '') + '" aria-label="' + esc(label) + '">' +
       '<span class="bd">' + pat + toy +
       '<span class="top"><span class="lb">' + lb + '</span><span class="tt">' + esc(tt) + '</span></span>' +
@@ -438,10 +451,10 @@
       '<img class="adv-ab adv-ded" alt="" src="' + IMG + 'ded.webp">' +
       '<div class="tw">' + SV.star + '<span>твори волшебство</span>' + SV.star + '</div>' +
       '<h1 class="adv-h1">Адвент-календарь<br>дизайнера</h1>' +
-      '<div class="adv-hand">Нажми на открытое окошко, чтобы развернуть.' + SV.hand + SV.handM + '</div>' +
+      '<div class="adv-hand">Нажми на любое окошко, чтобы развернуть.' + SV.hand + SV.handM + '</div>' +
       '<div class="adv-tag">Декабрь ' + YEAR + '</div>' +
       '</div><div class="adv-gifts" aria-hidden="true"></div><canvas class="adv-fx" aria-hidden="true"></canvas></section></div>' +
-      '<div class="adv-intro"><b>24 окошка — по одному каждый день до 24 декабря.</b><span>Новое окошко открывается в 00:00 по Москве.</span></div>' +
+      '<div class="adv-intro"><b>24 подарка для дизайнеров: шаблоны, промпты и дизайн-система.</b><span>Все окошки уже открыты — выбирай любое.</span></div>' +
       '<div class="adv-days"><h3>Выбери день</h3><div class="row">' + chips + '</div></div>' +
       '<div class="adv-grid">' + cards + '</div>' +
       '<div class="adv-sub">' +
@@ -483,7 +496,7 @@
       var el = root.querySelector('#adv-day-' + d), want = stateOf(d);
       var data = DAYS[d] || {};
       if (!el) continue;
-      if (!el.classList.contains(want) || (want === 'opened' && el.getAttribute('data-topic') !== (data.topic || ''))) {
+      if (!el.classList.contains(want) || el.getAttribute('data-topic') !== (data.topic || '')) {
         var tmp = document.createElement('div'); tmp.innerHTML = cardHTML(d);
         var nu = tmp.firstChild; nu.setAttribute('data-topic', data.topic || '');
         el.parentNode.replaceChild(nu, el);
@@ -492,7 +505,7 @@
     var cn = root.querySelector('.adv-cnt');
     if (cn && CFG.countdown) { var n = daysLeft(), w = plural(n, 'день', 'дня', 'дней'); cn.querySelector('.n').textContent = n; cn.querySelector('.w').textContent = w; cn.setAttribute('aria-label', 'До Нового года ' + n + ' ' + w); }
     var chips = root.querySelectorAll('.adv-days button');
-    for (var i = 0; i < chips.length; i++) chips[i].classList.toggle('on', stateOf(i + 1) !== 'closed');
+    for (var i = 0; i < chips.length; i++) chips[i].classList.add('on');
   }
 
   /* ---------- карточки ---------- */
@@ -505,10 +518,6 @@
   function bindCards() {
     var grid = root.querySelector('.adv-grid');
     grid.addEventListener('animationend', function (e) { if (e.animationName === 'advShake') e.target.classList.remove('shake'); });
-    grid.addEventListener('mouseover', function (e) {
-      var c = e.target.closest && e.target.closest('.adv-card.closed');
-      if (c && !c.contains(e.relatedTarget)) shake(c);
-    });
     grid.addEventListener('click', function (e) {
       var c = e.target.closest && e.target.closest('.adv-card'); if (!c) return;
       activate(+c.getAttribute('data-day'), c);
@@ -517,7 +526,6 @@
   function activate(d, c) {
     c = c || root.querySelector('#adv-day-' + d);
     var st = stateOf(d);
-    if (st === 'closed') { shake(c); try { navigator.vibrate && navigator.vibrate([30, 40, 30]); } catch (e) {} return; }
     openDialog(d, c);
   }
 
@@ -529,34 +537,53 @@
     row.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
       var d = +b.getAttribute('data-go'), c = root.querySelector('#adv-day-' + d);
-      if (stateOf(d) === 'closed') { c.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(function () { shake(c); try { navigator.vibrate && navigator.vibrate([30, 40, 30]); } catch (e) {} }, 450); }
-      else openDialog(d, c);
+      openDialog(d, c);
     });
   }
 
   /* ---------- диалог ---------- */
   var dlg, dlgCanvas, lastFocus, flakes;
+  function mdHTML(src) {
+    var TG = '<p><b>Подписывайся: рассказываю больше полезного в Telegram:</b><br><a href="' + esc(CFG.tg) + '" target="_blank" rel="noopener"><b><u>t.me/vitadidesign</u></b></a></p>';
+    return String(src || '').split(/\n\s*\n/).map(function (blk) {
+      var lines = blk.split('\n'), out = [], buf = [];
+      function flush() { if (buf.length) { out.push('<p>' + buf.join('<br>') + '</p>'); buf = []; } }
+      lines.forEach(function (ln) {
+        var t = ln.trim(); if (!t) return;
+        if (t === '{tg}') { flush(); out.push(TG); return; }
+        var im = t.match(/^\{img:([\w-]+)\}$/);
+        if (im) { flush(); out.push('<img class="ex" loading="lazy" alt="" src="' + DAYDIR + im[1] + '.webp">'); return; }
+        if (t.indexOf('## ') === 0) buf.push('<b>' + nb(t.slice(3)) + '</b>'); else buf.push(nb(t));
+      });
+      flush(); return out.join('');
+    }).join('');
+  }
   function dlgHTML(d) {
     var data = DAYS[d] || {};
-    var title = data.title || 'Заголовок — название темы';
-    var hasText = data.text || data.media;
+    var title = data.title || ('Окошко ' + d);
+    var img = data.media ? (/^https?:/.test(data.media) ? data.media : DAYDIR + data.media + '.webp') : '';
     var media = '';
-    if (data.media) media = /\.(mp4|webm|mov)(\?|$)/i.test(data.media)
-      ? '<video src="' + esc(data.media) + '" autoplay muted loop playsinline controls></video>'
-      : '<img src="' + esc(data.media) + '" alt="">';
-    var text = data.text ? (/<[a-z]/i.test(data.text) ? data.text : '<p>' + nb(data.text) + '</p>') : '<p>Текст про дизайн-систему или видео, гиф, превью стикеров и т.&nbsp;д.</p>';
+    if (data.site) {
+      media = '<div class="pv site"><iframe src="' + esc(data.site) + '" title="Превью сайта" loading="lazy"></iframe>' +
+        (img ? '<img class="poster" src="' + esc(img) + '" alt="">' : '') +
+        '<a class="adv-btn rd open" href="' + esc(data.site) + '" target="_blank" rel="noopener">Открыть сайт' + SV.arrow + '</a></div>';
+    } else if (img) media = /\.(mp4|webm|mov)(\?|$)/i.test(img)
+      ? '<div class="pv"><video src="' + esc(img) + '" autoplay muted loop playsinline></video></div>'
+      : '<div class="pv"><img src="' + esc(img) + '" alt=""></div>';
+    var text = data.body ? mdHTML(data.body) : (data.text ? (/<[a-z]/i.test(data.text) ? data.text : '<p>' + nb(data.text) + '</p>') : '');
     var btns = '';
-    if (data.figma !== false) btns += '<a class="adv-btn dk" href="' + esc(data.figma || '#') + '" target="_blank" rel="noopener">' + esc(data.figmaLabel || 'Ссылка в figma') + SV.arrow + '</a>';
-    if (data.download !== false) btns += '<a class="adv-btn ol" href="' + esc(data.download || '#') + '" target="_blank" rel="noopener"' + (data.download ? ' download' : '') + '>' + esc(data.downloadLabel || 'Скачать') + '</a>';
+    if (data.figma) btns += '<a class="adv-btn dk" href="' + esc(data.figma) + '" target="_blank" rel="noopener">' + esc(data.figmaLabel || 'Ссылка в figma') + SV.arrow + '</a>';
+    if (data.download) btns += '<a class="adv-btn ol" href="' + esc(data.download) + '" target="_blank" rel="noopener" download>' + esc(data.downloadLabel || 'Скачать') + '</a>';
     return '<div class="ov"></div><canvas aria-hidden="true"></canvas>' +
       '<div class="box" role="dialog" aria-modal="true" aria-labelledby="adv-dlg-t"><div class="in">' +
       '<button type="button" class="x" aria-label="Закрыть">' + SV.close + '</button>' +
       '<div class="hd"><b>Карточка ' + d + '</b><span>' + d + ' ' + MONTHS + '</span></div>' +
       '<div class="ct">' +
-      '<div><div class="lb">тема</div><h2 id="adv-dlg-t">' + nb(title) + '</h2></div>' +
-      '<div class="tx' + (hasText ? '' : ' ph') + '">' + text + media + '</div>' +
+      '<div><div class="lb">' + esc(data.label || 'тема') + '</div><h2 id="adv-dlg-t">' + nb(title) + '</h2></div>' +
+      media +
+      (text ? '<div class="tx">' + text + '</div>' : '') +
       (btns ? '<div class="gt"><div>' + esc(data.getLabel || 'Получить файлы') + '</div><div class="bt">' + btns +
-        '<span class="meta">' + esc(data.files || 'Файлы в формате PDF, 12 Мб') + '</span></div></div>' : '') +
+        (data.files ? '<span class="meta">' + esc(data.files) + '</span>' : '') + '</div></div>' : '') +
       '</div></div></div>';
   }
   function openDialog(d, card) {
